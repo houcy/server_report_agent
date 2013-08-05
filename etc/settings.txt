@@ -1,0 +1,6 @@
+{
+	"In_modules":["cpu_usage", "mem_usage", "disk_usable", "flow"],
+	"Out_modules":["sh_ecc_com"],
+	"Interval":300,
+	"Hb":30
+}
