@@ -7,4 +7,4 @@ Function Usable(disk)
 	Next
 	Usable = -1
 End Function
-wscript.echo Usable("C:") & "\t" & Usable("D:") & "\t" & Usable("E:")
+wscript.echo Usable("C:") & chr(9) & Usable("D:") & chr(9) & Usable("E:")

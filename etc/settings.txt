@@ -1,6 +1,6 @@
 {
-	"In_modules":["cpu_usage", "mem_usage", "disk_usable", "flow"],
-	"Out_modules":["sh_ecc_com"],
+	"Modules":["cpu_usage", "mem_usage", "disk_usable", "flow"],
+	"Bids":[1001,1002,1003,1004],
 	"Interval":300,
 	"Hb":30
 }

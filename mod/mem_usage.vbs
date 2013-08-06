@@ -29,4 +29,4 @@ For Each objItem in colItems
     PageFileUsage = PageFileUsage + objItem.CurrentUsage*1024
 Next
 
-wscript.echo AvailableMB & "\t" & AvailableKB & "\t" & PageFileUsage & "\t" & Usage
+wscript.echo AvailableMB & chr(9) & AvailableKB & chr(9) & PageFileUsage & chr(9) & Usage

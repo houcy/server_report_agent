@@ -43,4 +43,4 @@ for i = 1 to TIMES
 	wscript.sleep CPU_INTERVAL_ONCE * 1000
 next
 
-wscript.echo maxLoad & "\t" & maxQueue
+wscript.echo maxLoad & chr(9) & maxQueue

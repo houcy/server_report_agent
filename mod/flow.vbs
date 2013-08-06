@@ -98,13 +98,13 @@ eth1_tx_pkt_rate = (eth1_tx_pkt_2 - eth1_tx_pkt_1) / FLOW_USAGE_INTERVAL
 
 tcp_passive_opens_rate = (passive_opens_2 - passive_opens_1) / FLOW_USAGE_INTERVAL
 
-wscript.echo Round(eth0_rx_bits_rate) & "\t" & _
-            Round(eth0_rx_pkt_rate) & "\t" & _
-            Round(eth0_tx_bits_rate) & "\t" & _
-            Round(eth0_tx_pkt_rate) & "\t" & _
-            Round(eth1_rx_bits_rate) & "\t" & _
-            Round(eth1_rx_pkt_rate) & "\t" & _
-            Round(eth1_tx_bits_rate) & "\t" & _
-            Round(eth1_tx_pkt_rate) & "\t" & _
-            Round(tcp_passive_opens_rate) & "\t" & _
+wscript.echo Round(eth0_rx_bits_rate) & chr(9) & _
+            Round(eth0_rx_pkt_rate) & chr(9) & _
+            Round(eth0_tx_bits_rate) & chr(9) & _
+            Round(eth0_tx_pkt_rate) & chr(9) & _
+            Round(eth1_rx_bits_rate) & chr(9) & _
+            Round(eth1_rx_pkt_rate) & chr(9) & _
+            Round(eth1_tx_bits_rate) & chr(9) & _
+            Round(eth1_tx_pkt_rate) & chr(9) & _
+            Round(tcp_passive_opens_rate) & chr(9) & _
             tcp_cur_estab
