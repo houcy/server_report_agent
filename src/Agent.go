@@ -14,24 +14,26 @@ import (
 	"encoding/json"
 )
 
+var settings Settings
+
 type Settings struct {
-	Modules []string
-	Bids []int
+	InModules []map[string] string
+	OutModules []map[string] string
 	Interval int
 	Hb int
 }
 
-func loadSettings() (Settings, error) {
+func loadSettings() {
 	bytes, err := ioutil.ReadFile("../etc/settings.txt")
 	if err != nil {
 		fmt.Println("error: ", err)
+		os.Exit(-1)
 	}
-	var settings Settings
 	err = json.Unmarshal(bytes, &settings)
 	if err != nil {
 		fmt.Println("error: ", err)
+		os.Exit(-1)
 	}
-	return settings, err
 }
 
 func getLocalInfo() (ip string, hostName string) {
@@ -59,12 +61,13 @@ func runInModule(name string, channel chan string) {
 	channel <- string(buf)
 }
 
-func inModules(settings Settings) []string {
-	numModules := len(settings.Modules)
+func inModules() []string {
+	numModules := len(settings.InModules)
 	var rcvs [16]chan string
-	for index, modName := range settings.Modules {
+	for index, mod := range settings.InModules {
 		var prepend string
 		var ext string
+		modName := mod["name"]
 		rcvs[index] = make(chan string)
 		switch runtime.GOOS {
 			case "windows":
@@ -82,61 +85,59 @@ func inModules(settings Settings) []string {
 		tmp[i] = <-rcvs[i]
 	}
 	for i := 0; i<numModules; i++ {
-		results[i] = prepareOutput(settings.Bids[i], tmp[i]) 
+		results[i] = prepareOutput(settings.InModules[i]["bid"], tmp[i]) 
 	}
-	return results[:]
+	return results[:numModules]
 }
 
-func prepareOutput(bid int, output string) string {
+func prepareOutput(bid string, output string) string {
 	timeStamp := time.Now().Unix()
 	dateNow := time.Now().Format("20060102")
 	ip, hostName := getLocalInfo()
 	content := fmt.Sprintf("%s\t%d\t%s\t%s\t%s", dateNow, timeStamp, ip, hostName, output)
-	result := fmt.Sprintf("bid=%d&time=%d&content=%s", bid, timeStamp, url.QueryEscape(content))
+	result := fmt.Sprintf("bid=%s&time=%d&content=%s", bid, timeStamp, url.QueryEscape(content))
 	return result
 }
 
-func outModule(srcString string) {
-	fmt.Println(srcString)
-	res, err := http.Get("http://sh.ecc.com/data/server_view/api/data_collector.php?" + srcString)
-	if err != nil {
-	    fmt.Println("error: ", err)
+func outModules(srcString string) {
+	for i, _ := range settings.OutModules {
+		//fmt.Printf("%s\n", srcString)
+		res, err := http.Get(settings.OutModules[i]["url"] + "?" + srcString)
+		if err != nil {
+		    fmt.Println("error: ", err)
+		}
+		resp, err := ioutil.ReadAll(res.Body)
+		res.Body.Close()
+		if err != nil {
+		    fmt.Println("error: ", err)
+		}
+		fmt.Printf("%s\n", resp)
 	}
-	resp, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
-	if err != nil {
-	    fmt.Println("error: ", err)
-	}
-	fmt.Printf("%s", resp)
 }
 
-func invokeModules(settings Settings) {
-	inModuleReturns := inModules(settings)
+func invokeModules() {
+	inModuleReturns := inModules()
 	for _, srcString := range inModuleReturns {
-		outModule(srcString)
+		outModules(srcString)
 	}
 }
 
-func heartbeat(settings Settings) {
+func heartbeat() {
+	outModules(prepareOutput("1007", "alive"))
 	c := time.Tick(30 * time.Second)
 	for _ = range c {
-		outModule(prepareOutput(1007, "alive"))
+		loadSettings()
+		outModules(prepareOutput("1007", "alive"))
 	}
 }
 
 func main() {
-	settings, err := loadSettings()
-	if err != nil {
-		fmt.Println("error: Cannot load settings.")
-	}
-	fmt.Println(time.Now().Unix())
-	go heartbeat(settings)
-	go invokeModules(settings)
+	loadSettings()
+	go heartbeat()
+	go invokeModules()
 	c := time.Tick(300 * time.Second)
 	for _ = range c {
-		fmt.Println(time.Now().Unix())
-		go invokeModules(settings)
+		go invokeModules()
 	}
-	
 }
 

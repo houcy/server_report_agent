@@ -1,6 +1,13 @@
 {
-	"Modules":["cpu_usage", "mem_usage", "disk_usable", "flow"],
-	"Bids":[1001,1002,1003,1004],
+	"InModules":[
+		{"name":"cpu_usage", "bid":"1001"},
+		{"name":"mem_usage", "bid":"1002"},
+		{"name":"disk_usable", "bid":"1003"},
+		{"name":"flow", "bid":"1004"}
+	],
+	"OutModules":[
+		{"name":"sh_ecc", "url":"http://sh.ecc.com/data/server_view/api/data_collector.php", "host":"192.168.2.26:8080"}
+	],
 	"Interval":300,
 	"Hb":30
 }
