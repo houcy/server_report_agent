@@ -102,7 +102,22 @@ func prepareOutput(bid string, output string) string {
 func outModules(srcString string) {
 	for i, _ := range settings.OutModules {
 		//fmt.Printf("%s\n", srcString)
-		res, err := http.Get(settings.OutModules[i]["url"] + "?" + srcString)
+		urlString := settings.OutModules[i]["url"] + "?" + srcString
+		req, _ := http.NewRequest("GET", urlString, nil)
+		client := &http.Client{}
+		proxyString := settings.OutModules[i]["proxy"]
+		if proxyString != "" {
+			proxy, err := url.Parse(proxyString)
+			if err != nil {
+			    fmt.Println("error: ", err)
+			}
+			client = &http.Client{
+				Transport: &http.Transport {
+					Proxy : http.ProxyURL(proxy),
+				},
+			}
+		} 
+		res, err := client.Do(req)
 		if err != nil {
 		    fmt.Println("error: ", err)
 		}

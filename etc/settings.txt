@@ -6,7 +6,7 @@
 		{"name":"flow", "bid":"1004"}
 	],
 	"OutModules":[
-		{"name":"sh_ecc", "url":"http://sh.ecc.com/data/server_view/api/data_collector.php", "host":"192.168.2.26:8080"}
+		{"name":"sh_ecc", "url":"http://sh.ecc.com/data/server_view/api/data_collector.php", "proxy":"http://192.168.2.26:8080"}
 	],
 	"Interval":300,
 	"Hb":30
