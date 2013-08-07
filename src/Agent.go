@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"fmt"
+	"log"
 	"net"
 	"time"
 	"runtime"
@@ -11,10 +12,12 @@ import (
 	"net/url"
 	"net/http"
 	"io/ioutil"
+	//"os/signal"
 	"encoding/json"
 )
 
 var settings Settings
+var logger *log.Logger
 
 type Settings struct {
 	InModules []map[string] string
@@ -26,20 +29,20 @@ type Settings struct {
 func loadSettings() {
 	bytes, err := ioutil.ReadFile("../etc/settings.txt")
 	if err != nil {
-		fmt.Println("error: ", err)
-		os.Exit(-1)
+		logger.Fatalln(err.Error())
+		os.Exit(1)
 	}
 	err = json.Unmarshal(bytes, &settings)
 	if err != nil {
-		fmt.Println("error: ", err)
-		os.Exit(-1)
+		logger.Fatalln(err.Error())
+		os.Exit(1)
 	}
 }
 
 func getLocalInfo() (ip string, hostName string) {
 	addrs,err := net.InterfaceAddrs()
     if err != nil {
-        fmt.Println("error: ", err)
+        logger.Println(err.Error())
     }
     for _, ad := range addrs {
     	if tmp := strings.Split(ad.String(),"/")[0]; strings.HasPrefix(tmp, "192.168") {
@@ -56,7 +59,7 @@ func runInModule(name string, channel chan string) {
 	cmd := exec.Command(splitted[0], splitted[1:]...)
 	buf, err := cmd.Output()
 	if err != nil {
-		fmt.Println("error: ", err)
+		logger.Println(err.Error())
 	}
 	channel <- string(buf)
 }
@@ -109,7 +112,7 @@ func outModules(srcString string) {
 		if proxyString != "" {
 			proxy, err := url.Parse(proxyString)
 			if err != nil {
-			    fmt.Println("error: ", err)
+			    logger.Println(err.Error())
 			}
 			client = &http.Client{
 				Transport: &http.Transport {
@@ -119,12 +122,12 @@ func outModules(srcString string) {
 		} 
 		res, err := client.Do(req)
 		if err != nil {
-		    fmt.Println("error: ", err)
+		    logger.Println(err.Error())
 		}
 		resp, err := ioutil.ReadAll(res.Body)
 		res.Body.Close()
 		if err != nil {
-		    fmt.Println("error: ", err)
+		    logger.Println(err.Error())
 		}
 		fmt.Printf("%s\n", resp)
 	}
@@ -141,13 +144,28 @@ func heartbeat() {
 	outModules(prepareOutput("1007", "alive"))
 	c := time.Tick(30 * time.Second)
 	for _ = range c {
-		loadSettings()
 		outModules(prepareOutput("1007", "alive"))
 	}
 }
 
 func main() {
+	logfile,err := os.OpenFile("../log/agent.log",os.O_APPEND|os.O_CREATE,0)
+	if err!=nil {
+		logger.Fatalln(err.Error())
+		os.Exit(1)
+	}
+	/*cc := make(chan os.Signal, 1)
+	signal.Notify(cc, os.Interrupt)
+	go func(){
+	    for _ = range cc {
+	        logger.Println("Agent stopped")
+	    }
+	}()*/
+	defer logfile.Close()
+	logger = log.New(logfile,"",log.Ldate|log.Ltime|log.Lshortfile)
+	logger.Println("Agent started")
 	loadSettings()
+	logger.Printf("Settings: %v", settings)
 	go heartbeat()
 	go invokeModules()
 	c := time.Tick(300 * time.Second)
