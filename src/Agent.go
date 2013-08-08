@@ -149,7 +149,7 @@ func heartbeat() {
 }
 
 func main() {
-	logfile,err := os.OpenFile("../log/agent.log",os.O_APPEND|os.O_CREATE,0)
+	logfile,err := os.OpenFile("../log/agent.log", os.O_APPEND|os.O_CREATE, 0666)
 	if err!=nil {
 		logger.Fatalln(err.Error())
 		os.Exit(1)
