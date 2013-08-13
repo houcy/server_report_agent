@@ -5,19 +5,22 @@ import (
 	"net"
 	"time"
 	"strings"
+	"net/url"
+	"net/http"
 	"io/ioutil"
-	//"net/http"
 	"encoding/json"
 )
 
 type Settings struct {
 	InModules []map[string] string
 	OutModules []map[string] string
+	UpdateServer []map[string] string
 	Interval time.Duration	// nano seconds
 	Hb time.Duration
+	Update time.Duration
 }
 
-/* Load settings or die */
+/* Load settings */
 func LoadSettings() (Settings, error) {
 	var settings Settings
 	bytes, err := ioutil.ReadFile("../etc/settings.txt")
@@ -45,4 +48,35 @@ func GetLocalInfo() (ip string, hostName string, err error) {
     }
 	hostName, _ = os.Hostname()
 	return ip, hostName, err
+}
+
+/*
+	Do GET reuqest. Returns a slice of byte.
+	If the proxy string for a module is "" then we use no proxy for it.
+*/
+func ReadRemote(urlString string, proxyString string) (b []byte, err error) {
+	req, _ := http.NewRequest("GET", urlString, nil)
+	client := &http.Client{}
+	if proxyString != "" {
+		proxy, err := url.Parse(proxyString)
+		if err != nil {
+		    return b, err
+		}
+		client = &http.Client{
+			Transport: &http.Transport {
+				Proxy : http.ProxyURL(proxy),
+			},
+		}
+	} 
+	res, err := client.Do(req)
+	if err != nil {
+	    return b, err
+	}
+	resp, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
+	if err != nil {
+	    return b, err
+	}
+	b = resp
+	return b, nil
 }

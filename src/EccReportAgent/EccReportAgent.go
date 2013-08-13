@@ -9,8 +9,6 @@ import (
 	"strings"
 	"os/exec"
 	"net/url"
-	"net/http"
-	"io/ioutil"
 	"os/signal"
 	"utils"
 )
@@ -62,7 +60,7 @@ func inModules() []string {
 		modPathName := modPath + modName + ext
 		_, err := os.Stat(modPathName)
 		if nil != err && !os.IsExist(err) {
-			logger.Println(modPathName, "doesn't exist.")
+			logger.Println(modPathName, "doesn't exist. Ignored.")
 			continue
 		}
 		command := prepend + modPathName
@@ -91,7 +89,7 @@ func prepareOutput(bid string, output string) string {
 	dateNow := time.Now().Format("20060102")
 	ip, hostName, err := utils.GetLocalInfo()
 	if err != nil {
-		logger.Println(err)
+		logger.Println(err.Error())
 	}
 	content := fmt.Sprintf("%s\t%d\t%s\t%s\t%s", dateNow, timeStamp, ip, hostName, output)
 	result := fmt.Sprintf("bid=%s&time=%d&content=%s", bid, timeStamp, url.QueryEscape(content))
@@ -99,31 +97,10 @@ func prepareOutput(bid string, output string) string {
 }
 
 /*
-	Do GET reuqest.
-	If the proxy string for a module is "" then we use no proxy for it.
+	Call ReadRemote and print for debug purpose
 */
 func runOutModule(urlString string, proxyString string) {
-	req, _ := http.NewRequest("GET", urlString, nil)
-	client := &http.Client{}
-	if proxyString != "" {
-		proxy, err := url.Parse(proxyString)
-		if err != nil {
-		    logger.Println(err.Error())
-		    return
-		}
-		client = &http.Client{
-			Transport: &http.Transport {
-				Proxy : http.ProxyURL(proxy),
-			},
-		}
-	} 
-	res, err := client.Do(req)
-	if err != nil {
-	    logger.Println(err.Error())
-	    return
-	}
-	resp, err := ioutil.ReadAll(res.Body)
-	defer res.Body.Close()
+	resp, err := utils.ReadRemote(urlString, proxyString)
 	if err != nil {
 	    logger.Println(err.Error())
 	    return
@@ -149,6 +126,10 @@ func outModules(srcString string) {
 	}
 }
 
+/*
+	Invoke input modules and output modules in sequence.
+	It is a deadloop and repeat itself in 300 seconds.
+*/
 func invokeModules() {
 	inModuleReturns := inModules()
 	for _, srcString := range inModuleReturns {
@@ -165,16 +146,16 @@ func invokeModules() {
 
 func main() {
 	done := make(chan bool, 1)
-	logfile,err := os.OpenFile("../log/agent.log", os.O_CREATE | os.O_RDWR | os.O_APPEND, 0666)
+	logfile,err := os.OpenFile("../log/agent.log", os.O_CREATE | os.O_RDWR | os.O_APPEND, 0666) 
 	if err!=nil {
-		logger.Fatalln(err.Error())
+		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
-	logger = log.New(logfile,"",log.Ldate|log.Ltime|log.Lshortfile)
+	logger := log.New(logfile,"",log.Ldate|log.Ltime|log.Lshortfile)
 	defer logfile.Close()
 	// code snippet: capture Ctrl-C signal and handle it
 	cc := make(chan os.Signal, 1)
-	signal.Notify(cc, os.Interrupt)
+	signal.Notify(cc, os.Interrupt, os.Kill)
 	go func(){
 	    for _ = range cc {
 	    	stop = true
@@ -187,7 +168,7 @@ func main() {
 	logger.Println("Agent started")
 	settings, err = utils.LoadSettings()
 	if err != nil {
-		logger.Fatalln(err)
+		logger.Fatalln(err.Error())
 		os.Exit(1)
 	}
 	logger.Printf("Settings: %v", settings)
@@ -195,4 +176,3 @@ func main() {
 	go invokeModules()
 	<- done
 }
-

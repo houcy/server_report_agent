@@ -8,6 +8,10 @@
 	"OutModules":[
 		{"name":"sh_ecc_no", "url":"http://sh.ecc.com/data/server_view/api/data_collector.php", "proxy":""}
 	],
+	"UpdateServer":[
+		{"name":"local", "url":"http://localhost:9090", "proxy":""}
+	],
 	"Interval":300000000000,
-	"Hb":30000000000
+	"Hb":30000000000,
+	"Update":3600000000000
 }
