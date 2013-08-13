@@ -41,14 +41,13 @@ func checkList() []string {
 */
 func downloadAndReplaceFile(filename string) bool {
 	theFile := "../" + filename
-	fInfo, err := os.Stat(theFile)
-	if err != nil || fInfo.IsDir() {
-	    return false
-	}
-	err = os.Rename(theFile, theFile + "." + strconv.FormatInt(time.Now().Unix(), 10))
-	if err != nil {
-	    logger.Println(err.Error())
-	    return false
+	if _, err := os.Stat(theFile); err == nil {
+		// If file exists.
+	    err = os.Rename(theFile, theFile + "." + strconv.FormatInt(time.Now().Unix(), 10))
+		if err != nil {
+		    logger.Println(err.Error())
+		    return false
+		}
 	}
 	f, err := os.OpenFile(theFile, os.O_CREATE|os.O_WRONLY, 0666)
 	defer f.Close()
