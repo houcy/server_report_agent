@@ -8,6 +8,6 @@
 	"OutModules":[
 		{"name":"sh_ecc_no", "url":"http://sh.ecc.com/data/server_view/api/data_collector.php", "proxy":""}
 	],
-	"Interval":300,
-	"Hb":30
+	"Interval":300000000000,
+	"Hb":30000000000
 }

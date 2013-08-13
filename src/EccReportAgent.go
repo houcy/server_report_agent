@@ -23,8 +23,8 @@ var stop bool
 type Settings struct {
 	InModules []map[string] string
 	OutModules []map[string] string
-	Interval int
-	Hb int
+	Interval time.Duration	// nano seconds
+	Hb time.Duration
 }
 
 /* Load settings or die */
@@ -204,12 +204,12 @@ func invokeModules() {
 
 func main() {
 	done := make(chan bool, 1)
-	logfile,err := os.OpenFile("../log/agent.log", os.O_APPEND|os.O_CREATE, 0666)
+	logfile,err := os.OpenFile("../log/agent.log", os.O_CREATE | os.O_RDWR | os.O_APPEND, 0666)
 	if err!=nil {
 		logger.Fatalln(err.Error())
 		os.Exit(1)
 	}
-	logger = log.New(logfile,"\r",log.Ldate|log.Ltime|log.Lshortfile)
+	logger = log.New(logfile,"",log.Ldate|log.Ltime|log.Lshortfile)
 	defer logfile.Close()
 	// code snippet: capture Ctrl-C signal and handle it
 	cc := make(chan os.Signal, 1)
