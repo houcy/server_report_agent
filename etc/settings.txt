@@ -1,9 +1,9 @@
 {
 	"InModules":[
-		{"name":"cpu_usage", "bid":"1001"},
-		{"name":"mem_usage", "bid":"1002"},
-		{"name":"disk_usable", "bid":"1003"},
-		{"name":"flow", "bid":"1004"}
+		{"name":"cpu_usage", "bid":"1001", "windows":"1", "linux":"1" },
+		{"name":"mem_usage", "bid":"1002", "windows":"1", "linux":"1" },
+		{"name":"disk_usable", "bid":"1003", "windows":"1", "linux":"1" },
+		{"name":"flow", "bid":"1004", "windows":"1", "linux":"1" }
 	],
 	"OutModules":[
 		{"name":"sh_ecc_no", "url":"http://sh.ecc.com/data/server_view/api/data_collector.php", "proxy":""}

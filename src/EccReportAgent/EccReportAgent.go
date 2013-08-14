@@ -20,7 +20,7 @@ var stop bool
 /* Send heartbeat signal to server */
 func heartbeat() {
 	outModules(prepareOutput("1007", "alive"))
-	c := time.Tick(30 * time.Second)
+	c := time.Tick(settings.Hb)
 	for _ = range c {
 		outModules(prepareOutput("1007", "alive"))
 	}
@@ -51,9 +51,15 @@ func inModules() []string {
 		rcvs[index] = make(chan string)
 		switch runtime.GOOS {
 			case "windows":
+				if mod["windows"] != "1" {
+					continue 
+				}
 				prepend = "cscript.exe /nologo "
 				ext = ".vbs"
-			default:
+			case "linux":
+				if mod["linux"] != "1" { 
+					continue 
+				}
 				prepend = "/bin/bash "
 				ext = ".sh"
 		}
@@ -69,7 +75,7 @@ func inModules() []string {
 	var tmp, results [16]string
 	for i := 0; i<numModules; i++ {
 		// Here we wait until all of the scripts we invoked return,
-		// so the output time will be determined by the script that uses the longest time 
+		// so the output time will be determined by the script that costs the longest time 
 		tmp[i] = <-rcvs[i]
 	}
 	for i := 0; i<numModules; i++ {
@@ -128,14 +134,14 @@ func outModules(srcString string) {
 
 /*
 	Invoke input modules and output modules in sequence.
-	It is a deadloop and repeat itself in 300 seconds.
+	It is a deadloop and repeat itself in every 300 seconds.
 */
 func invokeModules() {
 	inModuleReturns := inModules()
 	for _, srcString := range inModuleReturns {
 		outModules(srcString)
 	}
-	c := time.Tick(300 * time.Second)
+	c := time.Tick(settings.Interval)
 	for _ = range c {
 		inModuleReturns := inModules()
 		for _, srcString := range inModuleReturns {
