@@ -2,10 +2,12 @@ package utils
 
 import (
 	"os"
+	"fmt"
+	"log"
 	"net"
 	"time"
 	"strings"
-	"net/url"
+	//"net/url"
 	"net/http"
 	"io/ioutil"
 	"encoding/json"
@@ -52,21 +54,13 @@ func GetLocalInfo() (ip string, hostName string, err error) {
 
 /*
 	Do GET reuqest. Returns a slice of byte.
-	If the proxy string for a module is "" then we use no proxy for it.
+	If the hostHeader string for a module is "" then we use no hostHeader for it.
 */
-func ReadRemote(urlString string, proxyString string) (b []byte, err error) {
+func ReadRemote(urlString string, hostHeader string) (b []byte, err error) {
 	req, _ := http.NewRequest("GET", urlString, nil)
 	client := &http.Client{}
-	if proxyString != "" {
-		proxy, err := url.Parse(proxyString)
-		if err != nil {
-		    return b, err
-		}
-		client = &http.Client{
-			Transport: &http.Transport {
-				Proxy : http.ProxyURL(proxy),
-			},
-		}
+	if hostHeader != "" {
+		req.Header.Set("Host", hostHeader)
 	} 
 	res, err := client.Do(req)
 	if err != nil {
@@ -79,4 +73,15 @@ func ReadRemote(urlString string, proxyString string) (b []byte, err error) {
 	}
 	b = resp
 	return b, nil
+}
+
+/* Initiate and return a logger by the filename passed in */
+func InitLogger(filename string) *log.Logger {
+	logfile,err := os.OpenFile(filename, os.O_CREATE | os.O_RDWR | os.O_APPEND, 0666) 
+	if err!=nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+	logger := log.New(logfile,"\r\n",log.Ldate|log.Ltime|log.Lshortfile)
+	return logger
 }

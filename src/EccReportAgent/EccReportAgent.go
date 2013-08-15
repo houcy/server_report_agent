@@ -105,8 +105,8 @@ func prepareOutput(bid string, output string) string {
 /*
 	Call ReadRemote and print for debug purpose
 */
-func runOutModule(urlString string, proxyString string) {
-	resp, err := utils.ReadRemote(urlString, proxyString)
+func runOutModule(urlString string, hostHeader string) {
+	resp, err := utils.ReadRemote(urlString, hostHeader)
 	if err != nil {
 	    logger.Println(err.Error())
 	    return
@@ -127,8 +127,8 @@ func outModules(srcString string) {
 			continue
 		}
 		urlString := settings.OutModules[i]["url"] + "?" + srcString
-		proxyString := settings.OutModules[i]["proxy"]
-		go runOutModule(urlString, proxyString)
+		hostHeader := settings.OutModules[i]["host"]
+		go runOutModule(urlString, hostHeader)
 	}
 }
 
@@ -152,13 +152,7 @@ func invokeModules() {
 
 func main() {
 	done := make(chan bool, 1)
-	logfile,err := os.OpenFile("../log/agent.log", os.O_CREATE | os.O_RDWR | os.O_APPEND, 0666) 
-	if err!=nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
-	}
-	logger := log.New(logfile,"",log.Ldate|log.Ltime|log.Lshortfile)
-	defer logfile.Close()
+	logger = utils.InitLogger("../log/agent.log")
 	// code snippet: capture Ctrl-C signal and handle it
 	cc := make(chan os.Signal, 1)
 	signal.Notify(cc, os.Interrupt, os.Kill)
@@ -172,6 +166,7 @@ func main() {
 	    }
 	}()
 	logger.Println("Agent started")
+	var err error
 	settings, err = utils.LoadSettings()
 	if err != nil {
 		logger.Fatalln(err.Error())

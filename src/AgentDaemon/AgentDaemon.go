@@ -17,7 +17,7 @@ func daemon(programName string) {
 			continue
 		}
 		pid := cmd.Process.Pid
-		pid_file, _ := os.OpenFile("../etc/" + programName + ".pid", os.O_CREATE | os.O_WRONLY, 0666) 
+		pid_file, _ := os.OpenFile("../etc/" + programName + ".pid", os.O_CREATE | os.O_WRONLY | os.O_TRUNC, 0666) 
 		pid_file.WriteString(strconv.Itoa(pid))
 		defer pid_file.Close()
 		err = cmd.Wait()

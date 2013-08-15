@@ -2,7 +2,6 @@ package main
 
 import (
 	"os"
-	"fmt"
 	"log"
 	"time"
 	"utils"
@@ -57,8 +56,8 @@ func downloadAndReplaceFile(filename string) bool {
 	    return false
 	}
 	urlString := settings.UpdateServer[0]["url"] + "/?action=get_file&name=" + url.QueryEscape(filename)
-	proxyString := settings.UpdateServer[0]["proxy"]
-    resp, err := utils.ReadRemote(urlString, proxyString)
+	hostHeader := settings.UpdateServer[0]["host"]
+    resp, err := utils.ReadRemote(urlString, hostHeader)
 	if err != nil {
 	    logger.Println(err.Error())
 	    return false
@@ -67,6 +66,10 @@ func downloadAndReplaceFile(filename string) bool {
 	return true
 }
 
+/*
+	Stop EccReportAgent by its PID recorded by the daemon if updates exist. 
+	Then download these files
+*/
 func stopAndUpdate() {
 	c := time.Tick(settings.Update)
 	for _ = range c {
@@ -105,13 +108,7 @@ func stopAndUpdate() {
 
 func main() {
 	done := make(chan bool, 1)
-	logfile,err := os.OpenFile("../log/update.log", os.O_CREATE | os.O_APPEND, 0666) 
-	if err!=nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		os.Exit(1)
-	}
-	logger := log.New(logfile,"",log.Ldate|log.Ltime|log.Lshortfile)
-	defer logfile.Close()
+	logger = utils.InitLogger("../log/update.log")
 	cc := make(chan os.Signal, 1)
 	signal.Notify(cc, os.Interrupt, os.Kill)
 	go func(){
@@ -124,6 +121,7 @@ func main() {
 	    }
 	}()
 	logger.Println("Updater started")
+	var err error
 	settings, err = utils.LoadSettings()
 	if err != nil {
 		logger.Fatalln(err)
