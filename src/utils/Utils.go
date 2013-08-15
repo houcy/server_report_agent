@@ -6,8 +6,8 @@ import (
 	"log"
 	"net"
 	"time"
+	"errors"
 	"strings"
-	//"net/url"
 	"net/http"
 	"io/ioutil"
 	"encoding/json"
@@ -23,17 +23,67 @@ type Settings struct {
 }
 
 /* Load settings */
-func LoadSettings() (Settings, error) {
-	var settings Settings
+func LoadSettings() (settings Settings, err error) {
 	bytes, err := ioutil.ReadFile("../etc/settings.txt")
 	if err != nil {
-		return settings, err
+		return
 	}
 	err = json.Unmarshal(bytes, &settings)
 	if err != nil {
-		return settings, err
+		return
 	}
-	return settings, nil
+	err = checkSettings(settings)
+	if err != nil {
+		return
+	}
+	return
+}
+
+/*
+	Check settings obtained from file, some items must exist.
+	Otherwise throw an error.
+*/
+func checkSettings(settings Settings) (err error) {
+	// input check
+	if len(settings.InModules)<=0||len(settings.InModules)>15 {
+		err = errors.New("Too many or too few Input modules")
+		return
+	}
+	for _, mod := range settings.InModules {
+		_, ok1 := mod["name"]
+		_, ok2 := mod["bid"]
+		_, ok3 := mod["windows"]
+		_, ok4 := mod["linux"]
+		if !ok1 || !ok2 || !(ok3||ok4) {
+			err = errors.New("Some Input modules are not properly configured.")
+			return
+		}
+	}
+	// output check
+	if len(settings.OutModules)<=0||len(settings.OutModules)>15 {
+		err = errors.New("Too many or too few output modules")
+		return
+	}
+	for _, mod := range settings.OutModules {
+		_, ok1 := mod["url"]
+		_, ok2 := mod["host"]
+		if !ok1 || !ok2 {
+			err = errors.New("Some output modules are not properly configured.")
+			return
+		}
+	}
+	// update server check
+	if len(settings.UpdateServer)!=1 {
+		err = errors.New("One and only one UpdateServer can be configured")
+		return
+	}
+	_, ok1 := settings.UpdateServer[0]["url"]
+	_, ok2 := settings.UpdateServer[0]["host"]
+	if !ok1 || !ok2 {
+		err = errors.New("UpdateServer is not properly configured.")
+		return
+	}
+	return
 }
 
 /*
@@ -49,7 +99,7 @@ func GetLocalInfo() (ip string, hostName string, err error) {
     	}
     }
 	hostName, _ = os.Hostname()
-	return ip, hostName, err
+	return
 }
 
 /*
@@ -58,30 +108,34 @@ func GetLocalInfo() (ip string, hostName string, err error) {
 */
 func ReadRemote(urlString string, hostHeader string) (b []byte, err error) {
 	req, _ := http.NewRequest("GET", urlString, nil)
-	client := &http.Client{}
+	var myTransport http.RoundTripper = &http.Transport {
+		// Timeout is set to 10 seconds
+        ResponseHeaderTimeout: time.Second * 10,
+	}
+	client := &http.Client{ Transport: myTransport }
 	if hostHeader != "" {
 		req.Header.Set("Host", hostHeader)
 	} 
 	res, err := client.Do(req)
 	if err != nil {
-	    return b, err
+	    return
 	}
 	resp, err := ioutil.ReadAll(res.Body)
 	defer res.Body.Close()
 	if err != nil {
-	    return b, err
+	    return
 	}
 	b = resp
-	return b, nil
+	return
 }
 
 /* Initiate and return a logger by the filename passed in */
-func InitLogger(filename string) *log.Logger {
+func InitLogger(filename string) (logger *log.Logger) {
 	logfile,err := os.OpenFile(filename, os.O_CREATE | os.O_RDWR | os.O_APPEND, 0666) 
 	if err!=nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
-	logger := log.New(logfile,"\r\n",log.Ldate|log.Ltime|log.Lshortfile)
-	return logger
+	logger = log.New(logfile,"\r\n",log.Ldate|log.Ltime|log.Lshortfile)
+	return
 }

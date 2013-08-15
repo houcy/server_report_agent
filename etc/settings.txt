@@ -6,10 +6,10 @@
 		{"name":"flow", "bid":"1004", "windows":"1", "linux":"1" }
 	],
 	"OutModules":[
-		{"name":"sh_ecc_no", "url":"http://192.168.2.26:8080/data/server_view/api/data_collector.php", "host":"sh.ecc.com"}
+		{"name":"sh_ecc_no", "url":"http://10.180.76.88/data/server_view/api/data_collector.php", "host":"sh.ecc.com"}
 	],
 	"UpdateServer":[
-		{"name":"local", "url":"http://localhost:9090", "proxy":""}
+		{"name":"local", "url":"http://localhost:9090", "host":""}
 	],
 	"Interval":300000000000,
 	"Hb":30000000000,

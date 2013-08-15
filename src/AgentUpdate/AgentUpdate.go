@@ -25,7 +25,7 @@ var stop bool
 func checkList() []string {
 	var list []string
 	urlString := settings.UpdateServer[0]["url"] + "/?action=get_list"
-	proxyString := settings.UpdateServer[0]["proxy"]
+	proxyString := settings.UpdateServer[0]["host"]
 	resp, err := utils.ReadRemote(urlString, proxyString)
 	if err != nil {
 		logger.Println(err.Error())
@@ -71,7 +71,7 @@ func downloadAndReplaceFile(filename string) bool {
 	Then download these files
 */
 func stopAndUpdate() {
-	c := time.Tick(settings.Update)
+	c := time.Tick(10 * 60 * time.Second)
 	for _ = range c {
 		if stop {
 			return

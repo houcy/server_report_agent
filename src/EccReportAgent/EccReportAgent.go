@@ -172,7 +172,7 @@ func main() {
 		logger.Fatalln(err.Error())
 		os.Exit(1)
 	}
-	logger.Printf("Settings: %v", settings)
+	logger.Printf("Settings: %s", settings)
 	go heartbeat()
 	go invokeModules()
 	<- done
