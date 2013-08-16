@@ -71,7 +71,7 @@ func downloadAndReplaceFile(filename string) bool {
 	Then download these files
 */
 func stopAndUpdate() {
-	c := time.Tick(10 * 60 * time.Second)
+	c := time.Tick(time.Duration(settings.Update) * time.Second)
 	for _ = range c {
 		if stop {
 			return

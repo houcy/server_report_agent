@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 	"runtime"
+	"strconv"
 	"strings"
 	"os/exec"
 	"net/url"
@@ -20,35 +21,41 @@ var stop bool
 /* Send heartbeat signal to server */
 func heartbeat() {
 	outModules(prepareOutput("1007", "alive"))
-	c := time.Tick(settings.Hb)
+	c := time.Tick(time.Duration(settings.Hb) * time.Second)
 	for _ = range c {
+		if stop { break }
 		outModules(prepareOutput("1007", "alive"))
 	}
 }
 
-func runInModule(name string, channel chan string) {
-	splitted := strings.Split(name, " ")
-	cmd := exec.Command(splitted[0], splitted[1:]...)
-	buf, err := cmd.Output()
-	if err != nil {
-		channel <- string(buf) + "error"
+func runInModule(name string, bid string, interval string) {
+	itv, _ := strconv.Atoi(interval)
+	c := time.Tick(time.Duration(itv) * time.Second)
+	for _ = range c {
+		if stop { break }
+		var result string
+		splitted := strings.Split(name, " ")
+		cmd := exec.Command(splitted[0], splitted[1:]...)
+		buf, err := cmd.Output()
+		if err != nil {
+			result = err.Error()
+		}
+		result = string(buf)
+		output := prepareOutput(bid, result)
+		outModules(output)
 	}
-	channel <- string(buf)
 }
 
 /*
 	Invoke scripts according to the OS type
 	Return: A slice of strings, which includes contents returned by the scripts.
 */
-func inModules() []string {
-	numModules := len(settings.InModules)
-	var rcvs [16]chan string
-	for index, mod := range settings.InModules {
+func inModules() {
+	for _, mod := range settings.InModules {
 		var prepend string
 		var ext string
 		modPath := "../mod/"
 		modName := mod["name"]
-		rcvs[index] = make(chan string)
 		switch runtime.GOOS {
 			case "windows":
 				if mod["windows"] != "1" {
@@ -70,18 +77,10 @@ func inModules() []string {
 			continue
 		}
 		command := prepend + modPathName
-		go runInModule(command, rcvs[index])
+		bid := mod["bid"]
+		interval := mod["interval"]
+		go runInModule(command, bid, interval)
 	}
-	var tmp, results [16]string
-	for i := 0; i<numModules; i++ {
-		// Here we wait until all of the scripts we invoked return,
-		// so the output time will be determined by the script that costs the longest time 
-		tmp[i] = <-rcvs[i]
-	}
-	for i := 0; i<numModules; i++ {
-		results[i] = prepareOutput(settings.InModules[i]["bid"], tmp[i]) 
-	}
-	return results[:numModules]
 }
 
 /*
@@ -132,24 +131,6 @@ func outModules(srcString string) {
 	}
 }
 
-/*
-	Invoke input modules and output modules in sequence.
-	It is a deadloop and repeat itself in every 300 seconds.
-*/
-func invokeModules() {
-	inModuleReturns := inModules()
-	for _, srcString := range inModuleReturns {
-		outModules(srcString)
-	}
-	c := time.Tick(settings.Interval)
-	for _ = range c {
-		inModuleReturns := inModules()
-		for _, srcString := range inModuleReturns {
-			outModules(srcString)
-		}
-	}
-}
-
 func main() {
 	done := make(chan bool, 1)
 	logger = utils.InitLogger("../log/agent.log")
@@ -172,8 +153,8 @@ func main() {
 		logger.Fatalln(err.Error())
 		os.Exit(1)
 	}
-	logger.Printf("Settings: %s", settings)
+	logger.Printf("Settings: %v", settings)
 	go heartbeat()
-	go invokeModules()
+	go inModules()
 	<- done
 }

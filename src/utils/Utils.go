@@ -17,9 +17,8 @@ type Settings struct {
 	InModules []map[string] string
 	OutModules []map[string] string
 	UpdateServer []map[string] string
-	Interval time.Duration	// nano seconds
-	Hb time.Duration
-	Update time.Duration
+	Hb int
+	Update int
 }
 
 /* Load settings */
@@ -52,9 +51,10 @@ func checkSettings(settings Settings) (err error) {
 	for _, mod := range settings.InModules {
 		_, ok1 := mod["name"]
 		_, ok2 := mod["bid"]
-		_, ok3 := mod["windows"]
-		_, ok4 := mod["linux"]
-		if !ok1 || !ok2 || !(ok3||ok4) {
+		_, ok3 := mod["interval"]
+		_, ok4 := mod["windows"]
+		_, ok5 := mod["linux"]
+		if !ok1 || !ok2 || !ok3 || !(ok4||ok5) {
 			err = errors.New("Some Input modules are not properly configured.")
 			return
 		}
