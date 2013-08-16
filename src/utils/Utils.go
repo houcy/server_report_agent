@@ -24,7 +24,7 @@ type Settings struct {
 
 /* Load settings */
 func LoadSettings() (settings Settings, err error) {
-	bytes, err := ioutil.ReadFile("../etc/settings.txt")
+	bytes, err := ioutil.ReadFile("../etc/settings.json")
 	if err != nil {
 		return
 	}
