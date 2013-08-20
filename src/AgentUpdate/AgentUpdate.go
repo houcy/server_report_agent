@@ -19,14 +19,15 @@ var stop bool
 
 /*
 	Check the update server to get update information.
-	If the content is not empty, then split the file names splitted by a semicolon.
+	If the content is not empty, then split the file names split by a semicolon.
 	File names are like these: mod/cpu_usage.vbs or bin/EccReportAgent
 */
 func checkList() []string {
 	var list []string
-	urlString := settings.UpdateServer[0]["url"] + "/?action=get_list"
-	proxyString := settings.UpdateServer[0]["host"]
-	resp, err := utils.ReadRemote(urlString, proxyString)
+	ip, _, _ := utils.GetLocalInfo() 
+	urlString := settings.UpdateServer[0]["url"] + "/?action=get_list&ip=" + ip
+	hostString := settings.UpdateServer[0]["host"]
+	resp, err := utils.ReadRemote(urlString, hostString)
 	if err != nil {
 		logger.Println(err.Error())
 	    return list
@@ -39,31 +40,35 @@ func checkList() []string {
 	If the file name prepend with "../" exists, rename it by appending an
 	timestamp for now. And then download the file to the corresponding place.
 */
-func downloadAndReplaceFile(filename string) bool {
+func downloadAndReplaceFile(version string, filename string) bool {
 	theFile := "../" + filename
 	if _, err := os.Stat(theFile); err == nil {
-		// If file exists.
+		// If local file exists.
 	    err = os.Rename(theFile, theFile + "." + strconv.FormatInt(time.Now().Unix(), 10))
 		if err != nil {
 		    logger.Println(err.Error())
 		    return false
 		}
 	}
-	f, err := os.OpenFile(theFile, os.O_CREATE|os.O_WRONLY, 0666)
-	defer f.Close()
-    if err != nil {
-	    logger.Println(err.Error())
-	    return false
-	}
-	urlString := settings.UpdateServer[0]["url"] + "/?action=get_file&name=" + url.QueryEscape(filename)
+	urlString := settings.UpdateServer[0]["url"] + "/?action=get_file&v=" + version + "&name=" + url.QueryEscape(filename)
 	hostHeader := settings.UpdateServer[0]["host"]
     resp, err := utils.ReadRemote(urlString, hostHeader)
 	if err != nil {
 	    logger.Println(err.Error())
 	    return false
 	}
-	f.Write(resp)
-	return true
+	if len(resp) != 0 {
+		// empty response means no such file exists, we should do nothing.
+		f, err := os.OpenFile(theFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
+		defer f.Close()
+		if err != nil {
+			logger.Println(err.Error())
+			return false
+		}
+		f.Write(resp)
+		return true
+	}
+	return false
 }
 
 /*
@@ -77,6 +82,7 @@ func stopAndUpdate() {
 			return
 		}
 		if files :=checkList(); len(files) != 0 {
+			logger.Println(files)
 			ext := ""
 			if runtime.GOOS == "windows" {
 				ext = ".exe"
@@ -91,13 +97,15 @@ func stopAndUpdate() {
 			    return
 			}
 			err = kp.Kill()
+			// TODO: here we don't have the permission to kill this process. How to solve this?
 			if err != nil {
 			    logger.Println(err.Error())
 			    return
 			}
 			logger.Println("Killed PID:", pid_string, " from File", pid_file)
-			for _, filename := range files {
-				if !downloadAndReplaceFile(filename) {
+			version := files[0]
+			for _, filename := range files[1:] {
+				if !downloadAndReplaceFile(filename, version) {
 					logger.Println("update failed for:", filename)
 				}
 				time.Sleep(time.Second * 3)
