@@ -3,19 +3,21 @@ package main
 import (
 	"os"
 	"log"
+	"fmt"
 	"time"
 	"utils"
-	"runtime"
 	"strconv"
 	"strings"
+	"net"
 	"net/url"
-	"io/ioutil"
+	"net/rpc"
 	"os/signal"
 )
 
 var settings utils.Settings
 var logger *log.Logger
 var stop bool
+var client *rpc.Client
 
 /*
 	Check the update server to get update information.
@@ -32,6 +34,9 @@ func checkList() []string {
 		logger.Println(err.Error())
 	    return list
 	}
+	if string(resp) == "" {
+		return list
+	}
 	list = strings.Split(string(resp), ";")
 	return list
 }
@@ -40,7 +45,7 @@ func checkList() []string {
 	If the file name prepend with "../" exists, rename it by appending an
 	timestamp for now. And then download the file to the corresponding place.
 */
-func downloadAndReplaceFile(version string, filename string) bool {
+func downloadAndReplaceFile(filename string, version string) bool {
 	theFile := "../" + filename
 	if _, err := os.Stat(theFile); err == nil {
 		// If local file exists.
@@ -71,9 +76,19 @@ func downloadAndReplaceFile(version string, filename string) bool {
 	return false
 }
 
+func setDoneFlag() {
+	ip, _, _ := utils.GetLocalInfo()
+	urlString := settings.UpdateServer[0]["url"] + "/?action=set_done&ip=" + ip
+	hostHeader := settings.UpdateServer[0]["host"]
+	_, err := utils.ReadRemote(urlString, hostHeader)
+	if err != nil {
+		logger.Println(err.Error())
+	}
+}
+
 /*
-	Stop EccReportAgent by its PID recorded by the daemon if updates exist. 
-	Then download these files
+	Stop EccReportAgent by RPC the daemon if updates exist.
+	Then download these files.
 */
 func stopAndUpdate() {
 	c := time.Tick(time.Duration(settings.Update) * time.Second)
@@ -81,34 +96,38 @@ func stopAndUpdate() {
 		if stop {
 			return
 		}
-		if files :=checkList(); len(files) != 0 {
-			logger.Println(files)
-			ext := ""
-			if runtime.GOOS == "windows" {
-				ext = ".exe"
-			}
-			pid_file := "../etc/EccReportAgent" + ext + ".pid"
-			pid_byte, _ := ioutil.ReadFile(pid_file)
-			pid_string := string(pid_byte)
-			pid, _ := strconv.Atoi(pid_string)
-			kp, err := os.FindProcess(pid)
+		if files :=checkList(); len(files) > 1 {
+			allDone := true
+			// len(files) > 1 means "version + file list" or none
+			// make a rpc call to daemon, let daemon kill the agent process
+			var reply string
+			err := client.Call("Daemon.Kill", "EccReportAgent", &reply)
 			if err != nil {
-			    logger.Println(err.Error())
-			    return
+				logger.Println("RPC error:", err.Error())
+				return
 			}
-			err = kp.Kill()
-			// TODO: here we don't have the permission to kill this process. How to solve this?
-			if err != nil {
-			    logger.Println(err.Error())
-			    return
+			if reply != "success" {
+				logger.Println(reply)
+				return
 			}
-			logger.Println("Killed PID:", pid_string, " from File", pid_file)
 			version := files[0]
 			for _, filename := range files[1:] {
-				if !downloadAndReplaceFile(filename, version) {
+				succ := downloadAndReplaceFile(filename, version)
+				allDone = allDone && succ
+				if !succ {
 					logger.Println("update failed for:", filename)
 				}
 				time.Sleep(time.Second * 3)
+			}
+			if allDone {
+				logger.Println("Complete updating:", files)
+				setDoneFlag()
+			}
+			// reload settings in case that settings updated
+			settings, err = utils.LoadSettings()
+			if err != nil {
+				logger.Fatalln(err)
+				os.Exit(1)
 			}
 		}
 	}
@@ -128,8 +147,13 @@ func main() {
 	        os.Exit(0)
 	    }
 	}()
+	// dial to the daemon, and create a rpc client
+	conn, err := net.Dial("tcp", "127.0.0.1:8773")
+	if err != nil {
+		logger.Println(err.Error())
+	}
+	client = rpc.NewClient(conn)
 	logger.Println("Updater started")
-	var err error
 	settings, err = utils.LoadSettings()
 	if err != nil {
 		logger.Fatalln(err)

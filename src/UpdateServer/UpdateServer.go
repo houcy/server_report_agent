@@ -15,6 +15,7 @@ import (
 )
 
 var logger *log.Logger
+var db *sql.DB
 
 func dealRequest(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
@@ -27,26 +28,17 @@ func dealRequest(w http.ResponseWriter, r *http.Request) {
     		filename := r.FormValue("name")
 			version := r.FormValue("v")
     		getFile(filename, version, w)
+	case "set_done":
+		ip := r.FormValue("ip")
+		setDone(ip, w)
     }
     
 }
 
 func getList(ip string, w http.ResponseWriter) {
-	db,err := sql.Open("mysql", "root:@tcp(localhost:3306)/agentserver?charset=utf8")
-	if err != nil {
-		logger.Println("cannot open database")
-		fmt.Fprintf(w, "")
-		return
-	}
 	rows,err := db.Query("select v,files from version where v=(select v from machine where ip=? and done=0)", ip)
 	if err != nil {
 		logger.Println("cannot query table version")
-		fmt.Fprintf(w, "")
-		return
-	}
-	_, err = db.Exec("update machine set done=1 where ip=? and done=0", ip)
-	if err != nil {
-		logger.Println("cannot update table machine")
 		fmt.Fprintf(w, "")
 		return
 	}
@@ -58,7 +50,6 @@ func getList(ip string, w http.ResponseWriter) {
 			break
 		}
 	}
-	db.Close()
 	return
 }
 
@@ -81,11 +72,28 @@ func getFile(filename string, version string, w http.ResponseWriter) {
 	io.Copy(w, f)
 }
 
+func setDone(ip string, w http.ResponseWriter) {
+	_, err := db.Exec("update machine set done=1 where ip=? and done=0", ip)
+	if err != nil {
+		logger.Println("cannot update table machine")
+		fmt.Fprintf(w, "")
+		return
+	}
+	fmt.Fprintf(w, "success")
+}
+
 func main() {
+	var err error
 	os.Mkdir("../log/", 0666)
 	logger = utils.InitLogger("../log/server.log")
+	db,err = sql.Open("mysql", "root:@tcp(localhost:3306)/agentserver?charset=utf8")
+	if err != nil {
+		logger.Fatalln("cannot open database")
+		os.Exit(1)
+	}
+	defer db.Close()
 	http.HandleFunc("/", dealRequest)
-	err := http.ListenAndServe(":9090", nil)
+	err = http.ListenAndServe(":9090", nil)
     if err != nil {
         logger.Fatalln("ListenAndServe: ", err)
     }
