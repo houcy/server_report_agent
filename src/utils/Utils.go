@@ -93,7 +93,7 @@ func checkSettings(settings Settings) (err error) {
 func GetLocalInfo() (ip string, hostName string, err error) {
 	addrs,err := net.InterfaceAddrs()
     for _, ad := range addrs {
-    	if tmp := strings.Split(ad.String(),"/")[0]; strings.HasPrefix(tmp, "192.168") {
+    	if tmp := strings.Split(ad.String(),"/")[0]; !strings.HasPrefix(tmp, "127.0.0") {
     		ip = tmp
     		break
     	}
