@@ -4,3 +4,4 @@
 /etc/*.pid
 .idea/
 ReportAgent.iml
+settings.json
