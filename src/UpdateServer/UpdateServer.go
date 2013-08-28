@@ -202,8 +202,9 @@ func unzipAndMove(filename string, version int) (string, error) {
 		if err!=nil {
 			return "", err
 		}
-		// defer fw.Close()
-		// TODO: if this line is added, a runtime error will occur, otherwise, decompressed files cannot be closed.
+		if fw != nil {
+			fw.Close()
+		}
 	}
 	defer rd.Close()
 	return files, nil

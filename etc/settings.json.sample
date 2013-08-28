@@ -6,10 +6,10 @@
 		{"name":"disk_usable", "bid":"1004", "interval":"300", "windows":"1", "linux":"1" }
 	],
 	"OutModules":[
-		{"name":"sh_ecc_no", "url":"http://10.180.76.88/data/server_view/api/data_collector.php", "host":"sh.ecc.com"}
+		{"name":"sh_ecc_no", "url":"http://192.168.2.26:8080/data/server_view/api/data_collector.php", "host":"sh.ecc.com"}
 	],
 	"UpdateServer":[
-		{"name":"local", "url":"http://localhost:9090", "host":""}
+		{"name":"local", "url":"http://localhost:9090/update", "host":""}
 	],
 	"Hb":30,
 	"Update":3600
