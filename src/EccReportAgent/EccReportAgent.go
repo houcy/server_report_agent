@@ -14,6 +14,8 @@ import (
 	"utils"
 )
 
+const APPVERSION = "1.0"
+
 var settings utils.Settings
 var logger *log.Logger
 var stop bool
@@ -34,8 +36,8 @@ func runInModule(name string, bid string, interval string) {
 	for _ = range c {
 		if stop { break }
 		var result string
-		splitted := strings.Split(name, " ")
-		cmd := exec.Command(splitted[0], splitted[1:]...)
+		split := strings.Split(name, " ")
+		cmd := exec.Command(split[0], split[1:]...)
 		buf, err := cmd.Output()
 		if err != nil {
 			result = err.Error()
@@ -97,7 +99,8 @@ func prepareOutput(bid string, output string) string {
 		logger.Println(err.Error())
 	}
 	content := fmt.Sprintf("%s\t%d\t%s\t%s\t%s", dateNow, timeStamp, ip, hostName, output)
-	result := fmt.Sprintf("bid=%s&time=%d&content=%s", bid, timeStamp, url.QueryEscape(content))
+	appVersion := runtime.GOOS + APPVERSION
+	result := fmt.Sprintf("app=%s&bid=%s&time=%d&content=%s", appVersion, bid, timeStamp, url.QueryEscape(content))
 	return result
 }
 
