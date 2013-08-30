@@ -26,7 +26,7 @@ var client *rpc.Client
 func checkList() []string {
 	var list []string
 	ip, _, _ := utils.GetLocalInfo() 
-	urlString := settings.UpdateServer[0]["url"] + "/?action=get_list&ip=" + ip
+	urlString := settings.UpdateServer[0]["url"] + "?action=get_list&ip=" + ip
 	hostString := settings.UpdateServer[0]["host"]
 	resp, err := utils.ReadRemote(urlString, hostString)
 	if err != nil {
@@ -54,7 +54,7 @@ func downloadAndReplaceFile(filename string, version string) bool {
 		    return false
 		}
 	}
-	urlString := settings.UpdateServer[0]["url"] + "/?action=get_file&v=" + version + "&name=" + url.QueryEscape(filename)
+	urlString := settings.UpdateServer[0]["url"] + "?action=get_file&v=" + version + "&name=" + url.QueryEscape(filename)
 	hostHeader := settings.UpdateServer[0]["host"]
     resp, err := utils.ReadRemote(urlString, hostHeader)
 	if err != nil {
@@ -77,7 +77,7 @@ func downloadAndReplaceFile(filename string, version string) bool {
 
 func setDoneFlag() {
 	ip, _, _ := utils.GetLocalInfo()
-	urlString := settings.UpdateServer[0]["url"] + "/?action=set_done&ip=" + ip
+	urlString := settings.UpdateServer[0]["url"] + "?action=set_done&ip=" + ip
 	hostHeader := settings.UpdateServer[0]["host"]
 	_, err := utils.ReadRemote(urlString, hostHeader)
 	if err != nil {
