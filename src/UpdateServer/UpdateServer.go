@@ -179,15 +179,12 @@ func unzipAndMove(filename string, version int) (string, error) {
 	if err != nil {
 		return "", err
 	}
+    filenames := make([]string, 0, 100)
 	for _, f := range rd.File {
 		fname := f.FileInfo().Name()
 		// exclude dir
 		if !strings.HasSuffix(fname, "/") {
-			if files != "" {
-				files = files + ";" + fname
-			} else {
-				files = fname
-			}
+            filenames = append(filenames, fname)
 		}
 		rc, err := f.Open()
 		if err!=nil {
@@ -206,6 +203,8 @@ func unzipAndMove(filename string, version int) (string, error) {
 			fw.Close()
 		}
 	}
+    files = strings.Join(filenames, ";")
+    //logger.Println(files)
 	defer rd.Close()
 	return files, nil
 }
