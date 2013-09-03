@@ -220,7 +220,9 @@ func main() {
 		os.Exit(1)
 	}
 	defer db.Close()
-	http.HandleFunc("/update", dealRequest)
+    
+    http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("../static/"))))	
+    http.HandleFunc("/update", dealRequest)
 	http.HandleFunc("/upload", uploadFile)
 	http.HandleFunc("/store", store)
 	err = http.ListenAndServe(":9090", nil)

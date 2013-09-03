@@ -1,7 +1,9 @@
-/bin/*
-/pkg/*
+bin/
+pkg/
 .project
 /etc/*.pid
+up/
+log/
 .idea/
 ReportAgent.iml
 settings.json
