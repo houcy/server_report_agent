@@ -10,6 +10,7 @@ import (
 	"strings"
 	"os/exec"
 	"net/url"
+	"net/http"
 	"os/signal"
 	"utils"
 )
@@ -19,6 +20,7 @@ const APPVERSION = "1.0"
 var settings utils.Settings
 var logger *log.Logger
 var stop bool
+var netClient *http.Client
 
 /* Send heartbeat signal to server */
 func heartbeat() {
@@ -108,7 +110,7 @@ func prepareOutput(bid string, output string) string {
 	Call ReadRemote and print for debug purpose
 */
 func runOutModule(urlString string, hostHeader string) {
-	resp, err := utils.ReadRemote(urlString, hostHeader)
+	resp, err := utils.ReadRemote(urlString, hostHeader, netClient)
 	if err != nil {
 	    logger.Println(err.Error())
 	    return
@@ -150,6 +152,7 @@ func main() {
 	    }
 	}()
 	logger.Println("Agent started")
+	netClient = utils.BuildClient()
 	var err error
 	settings, err = utils.LoadSettings()
 	if err != nil {

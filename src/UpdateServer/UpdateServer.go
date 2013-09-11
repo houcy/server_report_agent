@@ -50,9 +50,10 @@ func getList(ip string, w http.ResponseWriter) {
 		err = rows.Scan(&v, &files)
 		if err == nil {
 			fmt.Fprintf(w, "%s;%s", v, files)
-			break
+			return
 		}
 	}
+	fmt.Fprintf(w, "")
 	return
 }
 

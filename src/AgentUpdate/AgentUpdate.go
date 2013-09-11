@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/url"
 	"net/rpc"
+	"net/http"
 	"os/signal"
 )
 
@@ -17,6 +18,7 @@ var settings utils.Settings
 var logger *log.Logger
 var stop bool
 var client *rpc.Client
+var netClient *http.Client
 
 /*
 	Check the update server to get update information.
@@ -28,7 +30,7 @@ func checkList() []string {
 	ip, _, _ := utils.GetLocalInfo() 
 	urlString := settings.UpdateServer[0]["url"] + "?action=get_list&ip=" + ip
 	hostString := settings.UpdateServer[0]["host"]
-	resp, err := utils.ReadRemote(urlString, hostString)
+	resp, err := utils.ReadRemote(urlString, hostString, netClient)
 	if err != nil {
 		logger.Println(err.Error())
 	    return list
@@ -56,7 +58,7 @@ func downloadAndReplaceFile(filename string, version string) bool {
 	}
 	urlString := settings.UpdateServer[0]["url"] + "?action=get_file&v=" + version + "&name=" + url.QueryEscape(filename)
 	hostHeader := settings.UpdateServer[0]["host"]
-    resp, err := utils.ReadRemote(urlString, hostHeader)
+    resp, err := utils.ReadRemote(urlString, hostHeader, netClient)
 	if err != nil {
 	    logger.Println(err.Error())
 	    return false
@@ -79,7 +81,7 @@ func setDoneFlag() {
 	ip, _, _ := utils.GetLocalInfo()
 	urlString := settings.UpdateServer[0]["url"] + "?action=set_done&ip=" + ip
 	hostHeader := settings.UpdateServer[0]["host"]
-	_, err := utils.ReadRemote(urlString, hostHeader)
+	_, err := utils.ReadRemote(urlString, hostHeader, netClient)
 	if err != nil {
 		logger.Println(err.Error())
 	}
@@ -152,6 +154,7 @@ func main() {
 		logger.Println(err.Error())
 	}
 	client = rpc.NewClient(conn)
+	netClient = utils.BuildClient()
 	logger.Println("Updater started")
 	settings, err = utils.LoadSettings()
 	if err != nil {

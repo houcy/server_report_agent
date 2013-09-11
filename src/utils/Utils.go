@@ -106,13 +106,8 @@ func GetLocalInfo() (ip string, hostName string, err error) {
 	Do GET reuqest. Returns a slice of byte.
 	If the hostHeader string for a module is "" then we use no hostHeader for it.
 */
-func ReadRemote(urlString string, hostHeader string) (b []byte, err error) {
+func ReadRemote(urlString string, hostHeader string, client *http.Client) (b []byte, err error) {
 	req, _ := http.NewRequest("GET", urlString, nil)
-	var myTransport http.RoundTripper = &http.Transport {
-		// Timeout is set to 10 seconds
-        ResponseHeaderTimeout: time.Second * 10,
-	}
-	client := &http.Client{ Transport: myTransport }
 	if hostHeader != "" {
 		req.Header.Set("Host", hostHeader)
 	} 
@@ -127,6 +122,15 @@ func ReadRemote(urlString string, hostHeader string) (b []byte, err error) {
 	}
 	b = resp
 	return
+}
+
+func BuildClient() *http.Client {
+	var myTransport http.RoundTripper = &http.Transport {
+		// Timeout is set to 10 seconds
+		ResponseHeaderTimeout: time.Second * 10,
+	}
+	client := &http.Client{ Transport: myTransport }
+	return client
 }
 
 /* Initiate and return a logger by the filename passed in */
