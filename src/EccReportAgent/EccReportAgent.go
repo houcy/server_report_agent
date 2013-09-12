@@ -24,11 +24,11 @@ var netClient *http.Client
 
 /* Send heartbeat signal to server */
 func heartbeat() {
-	outModules(prepareOutput("1007", "alive"))
+	outModules(prepareOutput("1007", "alive", 0))
 	c := time.Tick(time.Duration(settings.Hb) * time.Second)
 	for _ = range c {
 		if stop { break }
-		outModules(prepareOutput("1007", "alive"))
+		outModules(prepareOutput("1007", "alive", 0))
 	}
 }
 
@@ -45,7 +45,7 @@ func runInModule(name string, bid string, interval string) {
 			result = err.Error()
 		}
 		result = string(buf)
-		output := prepareOutput(bid, result)
+		output := prepareOutput(bid, result, itv)
 		outModules(output)
 	}
 }
@@ -92,15 +92,20 @@ func inModules() {
 	Param: bid, of the monitoring content; output, original content string.
 	Return: Formatted string
 */
-func prepareOutput(bid string, output string) string {
+func prepareOutput(bid string, output string, interval int) string {
 	
 	timeStamp := time.Now().Unix()
+	timeIdx := int(timeStamp)
 	dateNow := time.Now().Format("20060102")
 	ip, hostName, err := utils.GetLocalInfo()
 	if err != nil {
 		logger.Println(err.Error())
 	}
-	content := fmt.Sprintf("%s\t%d\t%s\t%s\t%s", dateNow, timeStamp, ip, hostName, output)
+	h, m, s := time.Now().Clock()
+	if interval != 0 {
+		timeIdx = (3600*h + 60*m + s) / interval
+	}
+	content := fmt.Sprintf("%s\t%d\t%s\t%s\t%s", dateNow, timeIdx, ip, hostName, output)
 	appVersion := runtime.GOOS + APPVERSION
 	result := fmt.Sprintf("app=%s&bid=%s&time=%d&content=%s", appVersion, bid, timeStamp, url.QueryEscape(content))
 	return result
