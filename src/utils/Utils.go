@@ -87,13 +87,13 @@ func checkSettings(settings Settings) (err error) {
 }
 
 /*
-	Get specific IP address (starts with "192.168") and the hostname.
+	Get specific IP address (exclude ip starts with "127.0.0" and "0.0.0.0") and the hostname.
 	Return: IP and hostname
 */
 func GetLocalInfo() (ip string, hostName string, err error) {
 	addrs,err := net.InterfaceAddrs()
     for _, ad := range addrs {
-    	if tmp := strings.Split(ad.String(),"/")[0]; !strings.HasPrefix(tmp, "127.0.0") {
+    	if tmp := strings.Split(ad.String(),"/")[0]; !strings.HasPrefix(tmp, "127.0.0") && !strings.HasPrefix(tmp, "0.0.0") {
     		ip = tmp
     		break
     	}
