@@ -120,6 +120,7 @@ func runOutModule(urlString string, hostHeader string) {
 	    logger.Println(err.Error())
 	    return
 	}
+	fmt.Printf("%s\n", urlString)
 	fmt.Printf("%s\n", resp)
 }
 

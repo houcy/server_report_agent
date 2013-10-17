@@ -3,6 +3,7 @@ TIMES = 16
 
 maxLoad = 0
 maxQueue = 0
+cpuString = ""
 
 Sub GetLoad()
 	Set objWMIService = GetObject("winmgmts:\\.\root\CIMV2") 
@@ -30,6 +31,12 @@ Sub GetLoad()
 		ProcessorQueueLength = total/count
 	end if
 
+	if cpuString <> "" then
+	    cpuString = cpuString & "=" & LoadPercentage
+	else
+	    cpuString = LoadPercentage
+	end if
+
 	if maxLoad < LoadPercentage then
 		maxLoad = LoadPercentage
 	end if
@@ -43,4 +50,4 @@ for i = 1 to TIMES
 	wscript.sleep CPU_INTERVAL_ONCE * 1000
 next
 
-wscript.echo maxLoad & chr(9) & maxQueue
+wscript.echo maxLoad & chr(9) & maxQueue & chr(9) & cpuString
