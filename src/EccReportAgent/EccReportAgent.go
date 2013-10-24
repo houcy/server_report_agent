@@ -65,7 +65,7 @@ func inModules() {
 				if mod["windows"] != "1" {
 					continue 
 				}
-				prepend = "cscript.exe /nologo "
+				prepend = "c:/windows/system32/cscript.exe /nologo "
 				ext = ".vbs"
 			case "linux":
 				if mod["linux"] != "1" { 

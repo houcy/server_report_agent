@@ -118,6 +118,7 @@ func uploadFile(w http.ResponseWriter, r *http.Request) {
 		files, err := unzipAndMove("../up/"+handler.Filename, v)
 		if err != nil {
 			logger.Println(err)
+			fmt.Fprintf(w, err.Error())
 			return
 		}
 		fv := FilesAndVersion {files, v}
